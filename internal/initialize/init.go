@@ -2,6 +2,7 @@ package initialize
 
 import (
 	_ "embed"
+	"errors"
 	"os"
 )
 
@@ -18,26 +19,23 @@ var (
 	variablesFileTemplate string
 )
 
-func Start() {
-	if err := os.MkdirAll("./.sensible/resources", 0756); err != nil {
-		os.Stdout.WriteString("Error creating directories: " + err.Error())
-		return
+func Start(file string) error {
+	if err := os.MkdirAll(file+"/resources", 0756); err != nil {
+		return errors.New("Error creating `resources` directory\n" + err.Error())
 	}
 
-	if err := os.MkdirAll("./.sensible/actions", 0756); err != nil {
-		os.Stdout.WriteString("Error creating directories: " + err.Error())
-		return
+	if err := os.MkdirAll(file+"/actions", 0756); err != nil {
+		return errors.New("Error creating `actions` directory\n" + err.Error())
 	}
 
-	if err := os.WriteFile("./.sensible/resources/hosts.hcl", []byte(hostFileTemplate), 0644); err != nil {
-		os.Stdout.WriteString("Error creating host file: " + err.Error())
-		return
+	if err := os.WriteFile(file+"/resources/hosts.hcl", []byte(hostFileTemplate), 0644); err != nil {
+		return errors.New("Error creating `hosts.hcl` file\n" + err.Error())
 	}
 
-	if err := os.WriteFile("./.sensible/resources/values.hcl", []byte(variablesFileTemplate), 0644); err != nil {
-		os.Stdout.WriteString("Error creating values file: " + err.Error())
-		return
+	if err := os.WriteFile(file+"/resources/values.hcl", []byte(variablesFileTemplate), 0644); err != nil {
+		return errors.New("Error creating `values.hcl` file\n" + err.Error())
 	}
 
 	os.Stdout.WriteString("Sensible initialized successfully!!\n")
+	return nil
 }

@@ -3,8 +3,8 @@ package action
 import (
 	"fmt"
 	"path/filepath"
-	"sensible/constants"
 	"sensible/internal/action/components"
+	"sensible/internal/constants"
 	"sensible/pkg/logger"
 
 	"github.com/hashicorp/hcl/v2/gohcl"

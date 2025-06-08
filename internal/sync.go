@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sensible/constants"
+	"sensible/internal/constants"
 	"sensible/models"
 
 	"github.com/hashicorp/hcl/v2"
@@ -88,5 +88,4 @@ func Sync() {
 
 	fmt.Println(hostConfig.Groups)
 	fmt.Println(hostConfig.Hosts)
-
 }

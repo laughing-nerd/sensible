@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sensible/constants"
+	"sensible/internal/constants"
 
 	"github.com/robfig/cron/v3"
 )

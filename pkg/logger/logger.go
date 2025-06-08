@@ -2,7 +2,7 @@ package logger
 
 import (
 	"os"
-	"sensible/constants"
+	"sensible/internal/constants"
 	"time"
 )
 

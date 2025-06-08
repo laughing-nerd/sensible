@@ -3,7 +3,7 @@ module sensible
 go 1.24.0
 
 require (
-	github.com/alecthomas/kingpin v2.2.6+incompatible
+	github.com/alecthomas/kong v1.11.0
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/shirou/gopsutil/v4 v4.25.4
@@ -13,8 +13,6 @@ require (
 
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
