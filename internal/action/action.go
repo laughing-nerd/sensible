@@ -1,85 +1,122 @@
 package action
 
 import (
+	"errors"
 	"fmt"
-	"path/filepath"
+	"maps"
 	"sensible/internal/action/components"
+	"sensible/internal/connectors"
 	"sensible/internal/constants"
+	"sensible/models"
+	"sensible/pkg/hclparser"
 	"sensible/pkg/logger"
+	"sync"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclparse"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/zclconf/go-cty/cty"
 )
 
-func Parse(path string) {
-	parser := hclparse.NewParser()
-	f, _ := filepath.Abs(path)
-	file, diags := parser.ParseHCLFile(f)
-	if diags.HasErrors() {
-		logger.Error(fmt.Sprintf("Error parsing file %s: %v", f, diags))
-		return
+func Do(path string, variables map[string]cty.Value, groups map[string]map[string]models.Host) error {
+	var (
+		wg    = &sync.WaitGroup{}
+		mode  string
+		hosts = make(map[string]models.Host)
+	)
+
+	actionBlocks, err := hclparser.GetBlocks(path)
+	if err != nil {
+		return err
 	}
 
-	rootBody := file.Body.(*hclsyntax.Body)
-
-	// iterate over all actions in the rootBody
-	for _, block := range rootBody.Blocks {
-		if block.Type != constants.Action || len(block.Labels) < 1 {
+	// iterate over all actions
+	for _, actionBlock := range actionBlocks {
+		if actionBlock.Type != constants.Action || len(actionBlock.Labels) < 1 {
 			continue
 		}
 
-		actionName := block.Labels[0]
-		actionBody := block.Body
+		actionName := actionBlock.Labels[0]
+		actionBody := actionBlock.Body
 
-		// Extract hosts or groups from the action body
-		// hostsAttr, hostsOk := actionBody.Attributes["hosts"]
-		// groupsAttr, groupsOk := actionBody.Attributes["groups"]
-		//
-		// if (!hostsOk && !groupsOk) || (hostsOk && groupsOk) {
-		// 	logger.Error(fmt.Sprintf("Action %s must have either 'hosts' or 'groups' attribute", actionName))
-		// 	return
-		// }
-		//
-		// if ok {
-		// 	value, diags := hostsAttr.Expr.Value(nil)
-		// 	if diags.HasErrors() {
-		// 		logger.Error(fmt.Sprintf("Error evaluating 'hosts' attribute in action %s: %v", actionName, diags))
-		// 		return
-		// 	}
-		//
-		// 	if value.Type().IsTupleType() || value.Type().IsListType() {
-		// 		hosts := []string{}
-		// 		for _, v := range value.AsValueSlice() {
-		// 			hosts = append(hosts, v.AsString())
-		// 		}
-		// 		logger.Info(fmt.Sprintf("Hosts for action %s: %v", actionName, hosts))
-		// 	} else {
-		// 		logger.Error(fmt.Sprintf("'hosts' in action %s is not a list", actionName))
-		// 	}
-		// }
-		//
-		// return
+		// 0. fetch the host groups
+		hgroups := make(map[string]cty.Value)
+		if err := hclparser.GetBlockAttributes(actionBlock, hgroups); err != nil {
+			return err
+		}
 
-		logger.Info("Running action: " + actionName)
+		v, ok := hgroups["groups"]
+		mode = constants.Remote
+
+		// if groups is not present then the commands will be run locally
+		if !ok {
+			mode = constants.Local
+		} else {
+
+			// if groups is present then it should be an array of strings
+			if !v.Type().IsTupleType() {
+				return errors.New("`groups` must be an array of host groups")
+			}
+
+			// if everything is okay, then extract the hosts map
+			for _, group := range v.AsValueSlice() {
+				if h, ok := groups[group.AsString()]; ok {
+					maps.Copy(hosts, h)
+				}
+			}
+
+			logger.Info("Connecting to hosts")
+			// Connect to the hosts here
+			for hostname, hostVal := range hosts {
+				var (
+					authMethod string
+					creds      string
+				)
+
+				if hostVal.Password != "" {
+					authMethod = constants.Password
+					creds = hostVal.Password
+				} else if hostVal.PrivateKey != "" {
+					authMethod = constants.PrivateKey
+					creds = hostVal.PrivateKey
+				} else {
+					return errors.New("`password` or `private_key` is required for the host:" + hostname)
+				}
+
+				wg.Add(1)
+				go func(hostname string, hostVal models.Host, hosts map[string]models.Host) {
+					defer wg.Done()
+					client, err := connectors.NewSshConnection(hostVal.Address, authMethod, hostVal.Username, creds, hostVal.Timeout)
+					if err != nil {
+						logger.Error("Unabled connect to host:" + hostname)
+					}
+					host := hosts[hostname]
+					host.SshClient = client
+					hosts[hostname] = host
+				}(hostname, hostVal, hosts)
+			}
+		}
+		wg.Wait()
+
+		// 1. Execute the components
+		logger.Info("Running: " + actionName)
 
 		for _, componentBlock := range actionBody.Blocks {
-
 			var component = components.ComponentMap[componentBlock.Type]
-			if diags := gohcl.DecodeBody(componentBlock.Body, nil, component); diags.HasErrors() {
-				logger.Error(fmt.Sprintf("Error decoding component %s: %v", componentBlock.Type, diags))
-				return
+
+			evalCtx := &hcl.EvalContext{Variables: variables}
+			if diags := gohcl.DecodeBody(componentBlock.Body, evalCtx, component); diags.HasErrors() {
+				return errors.New(fmt.Sprintf("Error decoding component %s: %v", componentBlock.Type, diags))
 			}
 
 			logger.Custom("EXECUTING... "+componentBlock.Labels[0], constants.ColorYellow, "🚀")
-			if err := components.Execute(component); err != nil {
+			if err := components.Execute(component, mode, hosts); err != nil {
 				logger.Error(fmt.Sprintf("Error executing component %s: %v", componentBlock.Type, err))
 				continue
 			}
 			logger.Plain("\n")
-
 		}
 
 	}
 
+	return nil
 }

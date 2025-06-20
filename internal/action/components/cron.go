@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sensible/internal/constants"
+	"sensible/models"
 
 	"github.com/robfig/cron/v3"
 )
@@ -44,22 +45,9 @@ func (c *CronComponent) ValidateParams() error {
 	return nil
 }
 
-func (c *CronComponent) Run() error {
-
-	// Add -u before the user if specified. Required for cron expression
-	userFlag := ""
-	if c.User != "" {
-		userFlag = "-u " + c.User
-	}
-
-	var cmd *exec.Cmd
-	switch c.Type {
-	case constants.CronTypeAdd:
-		cmd = exec.Command("sh", "-c", fmt.Sprintf(constants.AddExpr, userFlag, c.Expression, c.Job, userFlag))
-	case constants.CronTypeRemove:
-		cmd = exec.Command("sh", "-c", fmt.Sprintf(constants.RemoveExpr, userFlag, c.Job, userFlag))
-	}
-
+func (c *CronComponent) RunLocal() error {
+	command := c.getCrontabCommand()
+	cmd := exec.Command("sh", "-c", command)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -67,4 +55,26 @@ func (c *CronComponent) Run() error {
 	}
 
 	return nil
+}
+
+func (c *CronComponent) RunRemote(hosts map[string]models.Host) {
+	c.RunSshCommand(hosts, c.getCrontabCommand())
+}
+
+// helper func ...
+func (c *CronComponent) getCrontabCommand() string {
+	// Add -u before the user if specified. Required for cron expression
+	userFlag := ""
+	if c.User != "" {
+		userFlag = "-u " + c.User
+	}
+
+	switch c.Type {
+	case constants.CronTypeAdd:
+		return fmt.Sprintf(constants.AddExpr, userFlag, c.Expression, c.Job, userFlag)
+	case constants.CronTypeRemove:
+		return fmt.Sprintf(constants.RemoveExpr, userFlag, c.Job, userFlag)
+	default:
+		return ""
+	}
 }

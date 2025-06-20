@@ -3,6 +3,7 @@ package components
 import (
 	"os"
 	"os/exec"
+	"sensible/models"
 )
 
 type ShellComponent struct {
@@ -15,7 +16,7 @@ func (c *ShellComponent) ValidateParams() error {
 	return nil
 }
 
-func (c *ShellComponent) Run() error {
+func (c *ShellComponent) RunLocal() error {
 	cmd := exec.Command("sh", "-c", c.Command)
 
 	cmd.Stdout = os.Stdout
@@ -28,4 +29,8 @@ func (c *ShellComponent) Run() error {
 	}
 
 	return nil
+}
+
+func (c *ShellComponent) RunRemote(hosts map[string]models.Host) {
+	c.RunSshCommand(hosts, c.Command)
 }

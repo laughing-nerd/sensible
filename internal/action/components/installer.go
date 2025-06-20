@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sensible/models"
 	"strings"
 )
 
@@ -19,8 +20,8 @@ var pkgManagers = map[string]string{
 	"apt":     "sudo apt install -y %s",
 	"apt-get": "sudo apt-get install -y %s",
 	"dnf":     "sudo dnf install -y %s",
-	"yum":     "sudo yum install -y %s",
 	"pacman":  "sudo pacman -S --noconfirm %s",
+	"yum":     "sudo yum install -y %s",
 	"apk":     "sudo apk add %s",
 	"brew":    "brew install %s",
 	"port":    "sudo port install %s",
@@ -33,8 +34,8 @@ func (c *InstallerComponent) ValidateParams() error {
 	return nil
 }
 
-func (c *InstallerComponent) Run() error {
-	command, err := getPkgInstallCommand(c.Preferred)
+func (c *InstallerComponent) RunLocal() error {
+	command, err := c.getPkgInstallCommand()
 	if err != nil {
 		return err
 	}
@@ -50,13 +51,17 @@ func (c *InstallerComponent) Run() error {
 	return execCommand.Run()
 }
 
+func (c *InstallerComponent) RunRemote(hosts map[string]models.Host) {
+	c.RunSshInstallCommand(hosts)
+}
+
 // helper func ...
-func getPkgInstallCommand(preferred string) (string, error) {
+func (c *InstallerComponent) getPkgInstallCommand() (string, error) {
 
 	// If the preferred pkg manager is set and exists, return it
-	if preferred != "" {
-		_, err := exec.LookPath(preferred)
-		command, ok := pkgManagers[preferred]
+	if c.Preferred != "" {
+		_, err := exec.LookPath(c.Preferred)
+		command, ok := pkgManagers[c.Preferred]
 		if err == nil && ok {
 			return command, nil
 		}
@@ -69,4 +74,8 @@ func getPkgInstallCommand(preferred string) (string, error) {
 	}
 
 	return "", errors.New("no package manager found")
+}
+
+func (c *Base) GetName() string {
+	return "Hello"
 }

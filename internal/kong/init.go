@@ -1,7 +1,6 @@
 package kong
 
 import (
-	"os"
 	"sensible/internal/initialize"
 )
 
@@ -10,6 +9,5 @@ type InitCommand struct {
 }
 
 func (c *InitCommand) Run() error {
-	os.Stdout.WriteString("Initializing sensible\n")
 	return initialize.Start(c.File)
 }

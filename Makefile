@@ -27,4 +27,3 @@ build:
 		done \
 	done
 	@echo "Builds completed. Check the $(BUILD_DIR) directory."
-

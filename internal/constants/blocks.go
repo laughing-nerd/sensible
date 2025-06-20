@@ -1,6 +1,7 @@
 package constants
 
 const (
-	Action = "action"
-	Hosts  = "hosts"
+	Action    = "action"
+	Hosts     = "hosts"
+	Variables = "variables"
 )

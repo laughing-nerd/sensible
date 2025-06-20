@@ -3,18 +3,18 @@ package logger
 import (
 	"os"
 	"sensible/internal/constants"
-	"time"
 )
 
 func log(prefix, color, msg string) {
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	// Preallocate and build the full message
-	full := "[" + timestamp + "] " + color + prefix + constants.ColorReset + " " + msg + "\n"
-	_, _ = os.Stdout.WriteString(full)
+	_, _ = os.Stdout.WriteString(color + "[" + prefix + "]" + constants.ColorReset + " " + msg + "\n")
 }
 
 func Info(msg string) {
 	log("INFO", constants.ColorBlue, msg)
+}
+
+func Success(msg string) {
+	log("SUCCESS", constants.ColorGreen, msg)
 }
 
 func Custom(prefix, color, msg string) {
