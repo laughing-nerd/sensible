@@ -6,14 +6,12 @@ host "server1" {
   address = "${address}"
   username = "root"
   password = "root"
-  timeout = 1
   }
 
 host "server2" {
   address = "${address}"
   username = "root"
   password = "root"
-  timeout = 1
   }
 }
 
@@ -23,6 +21,5 @@ host "db_server_1" {
   address = "${address}"
   username = "root"
   password = "root"
-  timeout = 1
   }
 }

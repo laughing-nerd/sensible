@@ -5,8 +5,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sensible/internal/connectors"
+	"sensible/internal/constants"
 	"sensible/models"
+	"sensible/pkg/logger"
 	"strings"
+	"sync"
+
+	"golang.org/x/crypto/ssh"
 )
 
 type InstallerComponent struct {
@@ -35,7 +41,7 @@ func (c *InstallerComponent) ValidateParams() error {
 }
 
 func (c *InstallerComponent) RunLocal() error {
-	command, err := c.getPkgInstallCommand()
+	command, err := c.getPkgInstallCommand(constants.Local, nil)
 	if err != nil {
 		return err
 	}
@@ -52,23 +58,52 @@ func (c *InstallerComponent) RunLocal() error {
 }
 
 func (c *InstallerComponent) RunRemote(hosts map[string]models.Host) {
-	c.RunSshInstallCommand(hosts)
+	var wg sync.WaitGroup
+
+	// iterate over all hosts and create a new ssh session for each
+	for _, host := range hosts {
+		wg.Add(1)
+		go func(host models.Host) {
+			defer wg.Done()
+			session, err := connectors.NewSshSession(host.SshClient)
+			if err != nil {
+				logger.Error("failed to create SSH session for host " + host.Name + ": " + err.Error())
+				return
+			}
+			defer session.Close()
+
+			command, err := c.getPkgInstallCommand(constants.Remote, session)
+			if err != nil {
+				logger.Error("failed to get package install command for host " + host.Name + ": " + err.Error())
+				return
+			}
+
+			pkg := strings.Join(c.Packages, " ")
+			command = fmt.Sprintf(command, pkg)
+
+			if err := session.Run(command); err != nil {
+				logger.Error("failed to run command on host " + host.Name + ": " + err.Error())
+			}
+		}(host)
+	}
+	wg.Wait()
 }
 
 // helper func ...
-func (c *InstallerComponent) getPkgInstallCommand() (string, error) {
+func (c *InstallerComponent) getPkgInstallCommand(mode string, session *ssh.Session) (string, error) {
+	var err error
 
-	// If the preferred pkg manager is set and exists, return it
+	// If the preferred pkg manager is set and exists then return it
 	if c.Preferred != "" {
-		_, err := exec.LookPath(c.Preferred)
-		command, ok := pkgManagers[c.Preferred]
-		if err == nil && ok {
-			return command, nil
-		}
+		err = pkgLookup(mode, c.Preferred, session)
+	}
+	command, ok := pkgManagers[c.Preferred]
+	if err == nil && ok {
+		return command, nil
 	}
 
 	for name, command := range pkgManagers {
-		if _, err := exec.LookPath(name); err == nil {
+		if pkgLookup(mode, name, session) == nil {
 			return command, nil
 		}
 	}
@@ -76,6 +111,16 @@ func (c *InstallerComponent) getPkgInstallCommand() (string, error) {
 	return "", errors.New("no package manager found")
 }
 
-func (c *Base) GetName() string {
-	return "Hello"
+func pkgLookup(mode, name string, session *ssh.Session) error {
+	var err error
+	switch mode {
+	case constants.Local:
+		_, err = exec.LookPath(name)
+	default:
+		if session == nil {
+			return errors.New("SSH session is required for remote execution")
+		}
+		err = session.Run(fmt.Sprintf("command -v %s", name))
+	}
+	return err
 }

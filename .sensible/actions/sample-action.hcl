@@ -1,5 +1,4 @@
 action "Sample Action" {
-
   groups = ["Web Servers"]
 
   shell "Test shell" {

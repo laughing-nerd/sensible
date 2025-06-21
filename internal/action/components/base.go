@@ -60,27 +60,3 @@ func (b *Base) RunSshCommand(hosts map[string]models.Host, command string) {
 	}
 	wg.Wait()
 }
-
-func (b *Base) RunSshInstallCommand(hosts map[string]models.Host) {
-	var wg sync.WaitGroup
-
-	// iterate over all hosts and create a new ssh session for each
-	for _, host := range hosts {
-		wg.Add(1)
-		go func(host models.Host) {
-			defer wg.Done()
-			session, err := connectors.NewSshSession(host.SshClient)
-			if err != nil {
-				logger.Error("failed to create SSH session for host " + host.Name + ": " + err.Error())
-				return
-			}
-			defer session.Close()
-
-			// TODO: Fix this to run the install command properly
-			// if err := session.Run(command); err != nil {
-			// 	logger.Error("failed to run command on host " + host.Name + ": " + err.Error())
-			// }
-		}(host)
-	}
-	wg.Wait()
-}

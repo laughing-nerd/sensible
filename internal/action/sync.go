@@ -27,7 +27,7 @@ func Sync() (map[string]cty.Value, map[string]map[string]models.Host, error) {
 		return nil, nil, err
 	}
 
-	if len(blocks) > 1 {
+	if len(blocks) > 1 || blocks == nil {
 		return nil, nil, errors.New("There should be atmost 1 `variables` block")
 	}
 
