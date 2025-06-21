@@ -1,7 +1,8 @@
 package constants
 
 const (
-	MainDir    = "./.sensible"
-	HostFile   = "/resources/hosts.hcl"
-	VariablesFile = "/resources/values.hcl"
+	HostFile      = "./.sensible/resources/hosts.hcl"
+	VariablesFile = "./.sensible/resources/values.hcl"
+	ResourcesDir  = "./.sensible/resources"
+	ActionsDir    = "./.sensible/actions"
 )

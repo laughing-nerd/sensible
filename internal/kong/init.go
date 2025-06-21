@@ -5,9 +5,9 @@ import (
 )
 
 type InitCommand struct {
-	File string `help:"Optional file path." type:"path" short:"f" default:"./.sensible"`
+	// File string `help:"Optional file path." type:"path" short:"f" default:"./.sensible"`
 }
 
 func (c *InitCommand) Run() error {
-	return initialize.Start(c.File)
+	return initialize.Start()
 }

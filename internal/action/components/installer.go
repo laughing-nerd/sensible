@@ -67,14 +67,14 @@ func (c *InstallerComponent) RunRemote(hosts map[string]models.Host) {
 			defer wg.Done()
 			session, err := connectors.NewSshSession(host.SshClient)
 			if err != nil {
-				logger.Error("failed to create SSH session for host " + host.Name + ": " + err.Error())
+				logger.Error("failed to create SSH session for host ", host.Name, ": ", err.Error())
 				return
 			}
 			defer session.Close()
 
 			command, err := c.getPkgInstallCommand(constants.Remote, session)
 			if err != nil {
-				logger.Error("failed to get package install command for host " + host.Name + ": " + err.Error())
+				logger.Error("failed to get package install command for host ", host.Name, ": ", err.Error())
 				return
 			}
 
@@ -82,7 +82,7 @@ func (c *InstallerComponent) RunRemote(hosts map[string]models.Host) {
 			command = fmt.Sprintf(command, pkg)
 
 			if err := session.Run(command); err != nil {
-				logger.Error("failed to run command on host " + host.Name + ": " + err.Error())
+				logger.Error("failed to run command on host ", host.Name, ": ", err.Error())
 			}
 		}(host)
 	}

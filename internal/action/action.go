@@ -87,7 +87,7 @@ func Do(path string, variables map[string]cty.Value, groups map[string]map[strin
 					defer wg.Done()
 					client, err := connectors.NewSshConnection(hostVal.Address, authMethod, hostVal.Username, creds, hostVal.Timeout)
 					if err != nil {
-						logger.Error("Unabled connect to host:" + hostname)
+						logger.Error("Unabled connect to host:", hostname)
 					}
 					host := hosts[hostname]
 					host.SshClient = client
@@ -98,7 +98,7 @@ func Do(path string, variables map[string]cty.Value, groups map[string]map[strin
 		wg.Wait()
 
 		// 1. Execute the components
-		logger.Info("Running: " + actionName)
+		logger.Info("Running:", actionName)
 
 		for _, componentBlock := range actionBody.Blocks {
 			var component = components.ComponentMap[componentBlock.Type]
@@ -108,9 +108,9 @@ func Do(path string, variables map[string]cty.Value, groups map[string]map[strin
 				return errors.New(fmt.Sprintf("Error decoding component %s: %v", componentBlock.Type, diags))
 			}
 
-			logger.Custom("EXECUTING... "+componentBlock.Labels[0], constants.ColorYellow, "🚀")
+			logger.Custom("EXECUTING", constants.ColorYellow, componentBlock.Labels[0], "🚀")
 			if err := components.Execute(component, mode, hosts); err != nil {
-				logger.Error(fmt.Sprintf("Error executing component %s: %v", componentBlock.Type, err))
+				logger.Error("Error executing component", componentBlock.Type, ":", err.Error())
 				continue
 			}
 			logger.Plain("\n")

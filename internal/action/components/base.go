@@ -48,13 +48,13 @@ func (b *Base) RunSshCommand(hosts map[string]models.Host, command string) {
 			defer wg.Done()
 			session, err := connectors.NewSshSession(host.SshClient)
 			if err != nil {
-				logger.Error("failed to create SSH session for host " + host.Name + ": " + err.Error())
+				logger.Error("failed to create SSH session for host ", host.Name, ": ", err.Error())
 				return
 			}
 			defer session.Close()
 
 			if err := session.Run(command); err != nil {
-				logger.Error("failed to run command on host " + host.Name + ": " + err.Error())
+				logger.Error("failed to run command on host ", host.Name, ": ", err.Error())
 			}
 		}(host)
 	}

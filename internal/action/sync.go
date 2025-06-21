@@ -18,8 +18,15 @@ func Sync() (map[string]cty.Value, map[string]map[string]models.Host, error) {
 		groups    = make(map[string]map[string]models.Host)
 	)
 
-	hostsFilePath := filepath.Join(constants.MainDir, constants.HostFile)
-	valuesFilePath := filepath.Join(constants.MainDir, constants.VariablesFile)
+	hostsFilePath, err := filepath.Abs(constants.HostFile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	valuesFilePath, err := filepath.Abs(constants.VariablesFile)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// 0. Get variables map first
 	blocks, err := hclparser.GetBlocks(valuesFilePath)
