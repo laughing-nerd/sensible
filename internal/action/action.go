@@ -17,14 +17,14 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Do(path string, variables map[string]cty.Value, groups map[string]map[string]models.Host) error {
+func Do(filePath string, variables map[string]cty.Value, groups map[string]map[string]models.Host) error {
 	var (
 		wg    = &sync.WaitGroup{}
 		mode  string
 		hosts = make(map[string]models.Host)
 	)
 
-	actionBlocks, err := hclparser.GetBlocks(path)
+	actionBlocks, err := hclparser.GetBlocks(filePath)
 	if err != nil {
 		return err
 	}

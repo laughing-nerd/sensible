@@ -2,47 +2,59 @@ package action
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"sensible/internal/constants"
 	"sensible/models"
 	"sensible/pkg/hclparser"
+	"sensible/pkg/logger"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Sync() (map[string]cty.Value, map[string]map[string]models.Host, error) {
+func Sync(env string) (map[string]cty.Value, map[string]map[string]models.Host, error) {
 	var (
-		variables = make(map[string]cty.Value)
-		groups    = make(map[string]map[string]models.Host)
+		variables        = make(map[string]cty.Value)
+		groups           = make(map[string]map[string]models.Host)
+		resourcesDir     = fmt.Sprintf(constants.ResourcesDir, env)
+		baseResourcesDir = fmt.Sprintf(constants.ResourcesDir, "base")
+		hostsFile        = filepath.Join(resourcesDir, constants.HostFile)
+		valuesFile       = filepath.Join(resourcesDir, constants.VariablesFile)
+		baseValuesFile   = filepath.Join(baseResourcesDir, constants.VariablesFile)
 	)
 
-	hostsFilePath, err := filepath.Abs(constants.HostFile)
+	hostsFilePath, err := filepath.Abs(hostsFile)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	valuesFilePath, err := filepath.Abs(constants.VariablesFile)
+	valuesFilePath, err := filepath.Abs(valuesFile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	baseValuesFilePath, err := filepath.Abs(baseValuesFile)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// 0. Get variables map first
-	blocks, err := hclparser.GetBlocks(valuesFilePath)
-	if err != nil {
-		return nil, nil, err
+	// try to get the base values file first if env is not base (fallback mechanism)
+	// if this operation fails, it will ignore the base values file and log a warning
+	if env != "base" {
+		if !fileExists(baseValuesFilePath) {
+			logger.Warn("Unable to read base values file, ignoring default values")
+		} else {
+			getVariablesFromFile(baseValuesFilePath, variables) // intentionally ignoring the error here
+		}
 	}
 
-	if len(blocks) > 1 || blocks == nil {
-		return nil, nil, errors.New("There should be atmost 1 `variables` block")
-	}
-
-	if blocks[0].Type != constants.Variables {
-		return nil, nil, errors.New("There should be a `variables` block")
-	}
-
-	if err := hclparser.GetBlockAttributes(blocks[0], variables); err != nil {
+	// this will read the intended values file for the env
+	// and will overwrite variables if base values file exists for env != "base"
+	if err := getVariablesFromFile(valuesFilePath, variables); err != nil {
 		return nil, nil, err
 	}
 
@@ -69,4 +81,27 @@ func Sync() (map[string]cty.Value, map[string]map[string]models.Host, error) {
 	}
 
 	return variables, groups, nil
+}
+
+// helper func ...
+func fileExists(file string) bool {
+	_, err := os.Stat(file)
+	return err == nil || !os.IsNotExist(err)
+}
+
+func getVariablesFromFile(file string, variables map[string]cty.Value) error {
+	blocks, err := hclparser.GetBlocks(file)
+	if err != nil {
+		return err
+	}
+
+	if len(blocks) > 1 || blocks == nil {
+		return errors.New("There should be atmost 1 `variables` block")
+	}
+
+	if blocks[0].Type != constants.Variables {
+		return errors.New("There should be a `variables` block")
+	}
+
+	return hclparser.GetBlockAttributes(blocks[0], variables)
 }

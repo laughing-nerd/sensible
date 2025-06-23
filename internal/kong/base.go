@@ -6,6 +6,10 @@ import (
 	"github.com/alecthomas/kong"
 )
 
+type CommonFlags struct {
+	Env string `help:"Used to refer to the env. Default is base" default:"base" short:"e"`
+}
+
 var BaseCommand struct {
 	Init InitCommand `cmd:"" help:"Initialize sensible by creating a .sensible directory with required files"`
 	Run  RunCommand  `cmd:"" help:"Run an action present in .sensible/actions/ directory"`
