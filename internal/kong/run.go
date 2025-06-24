@@ -1,31 +1,32 @@
 package kong
 
 import (
+	"fmt"
 	"path/filepath"
 	"sensible/internal/action"
 	"sensible/internal/constants"
-	"strings"
 )
 
 type RunCommand struct {
+	CommonFlags
+
 	File string `help:"Mandatory action file name inside .sensible/action/ which you want to run" required:"" short:"f"`
 }
 
 func (c *RunCommand) Run() error {
-	index := strings.Index(c.File, ".hcl")
-	if index == -1 {
+	if filepath.Ext(c.File) != ".hcl" {
 		c.File += ".hcl"
 	}
 
-	f, err := filepath.Abs(filepath.Join(constants.ActionsDir, c.File))
+	variables, groups, err := action.Sync(c.Env)
 	if err != nil {
 		return err
 	}
 
-	variables, groups, err := action.Sync()
+	actionsDir := fmt.Sprintf(constants.ActionsDir, c.Env)
+	actionFile, err := filepath.Abs(filepath.Join(actionsDir, c.File))
 	if err != nil {
 		return err
 	}
-
-	return action.Do(f, variables, groups)
+	return action.Do(actionFile, variables, groups)
 }
