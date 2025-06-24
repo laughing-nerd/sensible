@@ -10,11 +10,6 @@ import (
 	"sensible/pkg/logger"
 )
 
-type sensibleFile struct {
-	name    string
-	content string
-}
-
 var (
 	//go:embed templates/hosts.hcl
 	hostFileTemplate string

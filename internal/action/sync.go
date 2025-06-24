@@ -48,7 +48,7 @@ func Sync(env string) (map[string]cty.Value, map[string]map[string]models.Host, 
 		if !fileExists(baseValuesFilePath) {
 			logger.Warn("Unable to read base values file, ignoring default values")
 		} else {
-			getVariablesFromFile(baseValuesFilePath, variables) // intentionally ignoring the error here
+			getVariablesFromFile(baseValuesFilePath, variables) //nolint:errcheck
 		}
 	}
 
