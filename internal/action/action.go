@@ -17,7 +17,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Do(filePath string, variables map[string]cty.Value, groups map[string]map[string]models.Host) error {
+func Do(filePath string, variables map[string]cty.Value, env string) error {
 	var (
 		wg    = &sync.WaitGroup{}
 		mode  string
@@ -44,10 +44,13 @@ func Do(filePath string, variables map[string]cty.Value, groups map[string]map[s
 			return err
 		}
 
+		// try to get the groups attribute
+		// this will determine whether the commands will be run locally or remotely
+		// and also determines if reading the hosts file is required or not
 		v, ok := hgroups["groups"]
-		mode = constants.Remote
 
 		// if groups is not present then the commands will be run locally
+		mode = constants.Remote
 		if !ok {
 			mode = constants.Local
 		} else {
@@ -57,6 +60,11 @@ func Do(filePath string, variables map[string]cty.Value, groups map[string]map[s
 				return errors.New("`groups` must be an array of host groups")
 			}
 
+			// get the hosts from hosts.hcl for the given environment
+			groups, err := GetHosts(variables, env)
+			if err != nil {
+				return err
+			}
 			// if everything is okay, then extract the hosts map
 			for _, group := range v.AsValueSlice() {
 				if h, ok := groups[group.AsString()]; ok {
@@ -98,6 +106,7 @@ func Do(filePath string, variables map[string]cty.Value, groups map[string]map[s
 		wg.Wait()
 
 		// 1. Execute the components
+		// TODO: Need to change this logic here to support parallel execution
 		logger.Info("Running:", actionName)
 
 		for _, componentBlock := range actionBody.Blocks {

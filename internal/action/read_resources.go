@@ -15,54 +15,50 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Sync(env string) (map[string]cty.Value, map[string]map[string]models.Host, error) {
-	var (
-		variables        = make(map[string]cty.Value)
-		groups           = make(map[string]map[string]models.Host)
-		resourcesDir     = fmt.Sprintf(constants.ResourcesDir, env)
-		baseResourcesDir = fmt.Sprintf(constants.ResourcesDir, "base")
-		hostsFile        = filepath.Join(resourcesDir, constants.HostFile)
-		valuesFile       = filepath.Join(resourcesDir, constants.VariablesFile)
-		baseValuesFile   = filepath.Join(baseResourcesDir, constants.VariablesFile)
-	)
+// TODO: Add env variable support
+func GetValues(env string) (map[string]cty.Value, error) {
+	var variables = make(map[string]cty.Value)
 
-	hostsFilePath, err := filepath.Abs(hostsFile)
+	valuesFilePath, err := getFile(constants.ResourcesDir, constants.VariablesFile, env)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	valuesFilePath, err := filepath.Abs(valuesFile)
+	baseValuesFilePath, err := getFile(constants.ResourcesDir, constants.VariablesFile, "base")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	baseValuesFilePath, err := filepath.Abs(baseValuesFile)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// 0. Get variables map first
-	// try to get the base values file first if env is not base (fallback mechanism)
-	// if this operation fails, it will ignore the base values file and log a warning
 	if env != "base" {
 		if !fileExists(baseValuesFilePath) {
 			logger.Warn("Unable to read base values file, ignoring default values")
 		} else {
-			getVariablesFromFile(baseValuesFilePath, variables) //nolint:errcheck
+			_ = getVariablesFromFile(baseValuesFilePath, variables)
 		}
 	}
 
 	// this will read the intended values file for the env
-	// and will overwrite variables if base values file exists for env != "base"
+	// and will overwrite variables if base/resources/values.hcl file exists for env != "base"
 	if err := getVariablesFromFile(valuesFilePath, variables); err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+
+	return variables, nil
+}
+
+func GetHosts(variables map[string]cty.Value, env string) (map[string]map[string]models.Host, error) {
+	var groups = make(map[string]map[string]models.Host)
+
+	hostsFilePath, err := getFile(constants.ResourcesDir, constants.HostFile, env)
+	if err != nil {
+		return nil, err
 	}
 
 	// 1. Get hosts map
 	evalCtx := &hcl.EvalContext{Variables: variables}
 	var hostConfig models.HostConfig
 	if err := hclsimple.DecodeFile(hostsFilePath, evalCtx, &hostConfig); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// 2. Post process
@@ -80,7 +76,7 @@ func Sync(env string) (map[string]cty.Value, map[string]map[string]models.Host, 
 		}
 	}
 
-	return variables, groups, nil
+	return groups, nil
 }
 
 // helper func ...
@@ -104,4 +100,11 @@ func getVariablesFromFile(file string, variables map[string]cty.Value) error {
 	}
 
 	return hclparser.GetBlockAttributes(blocks[0], variables)
+}
+
+func getFile(dir, file, env string) (string, error) {
+	dir = fmt.Sprintf(dir, env)
+	joinedFile := filepath.Join(dir, file)
+	return filepath.Abs(joinedFile)
+
 }

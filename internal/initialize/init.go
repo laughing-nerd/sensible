@@ -2,7 +2,6 @@ package initialize
 
 import (
 	_ "embed"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,32 +18,45 @@ var (
 
 	//go:embed templates/action.hcl
 	actionFileTemplate string
+
+	//go:embed templates/secrets.hcl
+	secretsFileTemplate string
 )
 
+type Starter struct {
+	FileName string
+	Template string
+}
+
+var starter = map[string][]Starter{
+	constants.ResourcesDir: {
+		{FileName: constants.HostFile, Template: hostFileTemplate},
+		{FileName: constants.VariablesFile, Template: variablesFileTemplate},
+	},
+	constants.ActionsDir: {
+		{FileName: constants.SampleActionFile, Template: actionFileTemplate},
+	},
+	constants.SecretsDir: {
+		{FileName: constants.SecretsFile, Template: secretsFileTemplate},
+	},
+}
+
 func Start(env string) error {
-	resourcesDir := fmt.Sprintf(constants.ResourcesDir, env)
-	actionsDir := fmt.Sprintf(constants.ActionsDir, env)
+	for dir, files := range starter {
 
-	// make required directories
-	if err := os.MkdirAll(resourcesDir, 0756); err != nil {
-		return errors.New("Error creating `resources` directory\n" + err.Error())
-	}
+		// create the directory
+		dirPath := fmt.Sprintf(dir, env)
+		if err := os.MkdirAll(dirPath, 0756); err != nil {
+			return fmt.Errorf("Error creating `%s` directory: %s\n", dir, err.Error())
+		}
 
-	if err := os.MkdirAll(actionsDir, 0756); err != nil {
-		return errors.New("Error creating `actions` directory\n" + err.Error())
-	}
+		// create the files in the directory
+		for _, file := range files {
+			if err := os.WriteFile(filepath.Join(dirPath, file.FileName), []byte(file.Template), 0644); err != nil {
+				return fmt.Errorf("Error creating `%s` file in `%s` directory: %s\n", file.FileName, dir, err.Error())
+			}
+		}
 
-	// write the required files
-	if err := os.WriteFile(filepath.Join(resourcesDir, constants.HostFile), []byte(hostFileTemplate), 0644); err != nil {
-		return errors.New("Error creating `hosts.hcl` file\n" + err.Error())
-	}
-
-	if err := os.WriteFile(filepath.Join(resourcesDir, constants.VariablesFile), []byte(variablesFileTemplate), 0644); err != nil {
-		return errors.New("Error creating `values.hcl` file\n" + err.Error())
-	}
-
-	if err := os.WriteFile(filepath.Join(actionsDir, constants.SampleActionFile), []byte(actionFileTemplate), 0644); err != nil {
-		return errors.New("Error creating `sample-action.hcl` file\n" + err.Error())
 	}
 
 	logger.Success("Sensible initialized successfully!!", "\n")

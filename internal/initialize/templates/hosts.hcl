@@ -2,23 +2,23 @@
 
 # ============= WEB SERVERS ============== #
 group "Web Servers" {
-host "server1" {
-  address = "${address}"
-  username = "root"
-  password = "root"
+  host "server1" {
+    address = "${address}"
+    username = "root"
+    password = "root"
   }
 
-host "server2" {
-  username = "root"
-  password = "root"
+  host "server2" {
+    username = "root"
+    password = "root"
   }
 }
 
 # ============= DB SERVERS ============== #
 group "DB Servers" {
-host "db_server_1" {
-  address = "${address}"
-  username = "root"
-  password = "root"
+  host "db_server_1" {
+    address = "${address}"
+    username = "root"
+    password = "root"
   }
 }

@@ -18,15 +18,17 @@ func (c *RunCommand) Run() error {
 		c.File += ".hcl"
 	}
 
-	variables, groups, err := action.Sync(c.Env)
-	if err != nil {
-		return err
-	}
-
 	actionsDir := fmt.Sprintf(constants.ActionsDir, c.Env)
 	actionFile, err := filepath.Abs(filepath.Join(actionsDir, c.File))
 	if err != nil {
 		return err
 	}
-	return action.Do(actionFile, variables, groups)
+
+	// we will need the variables
+	values, err := action.GetValues(c.Env)
+	if err != nil {
+		return err
+	}
+
+	return action.Do(actionFile, values, c.Env)
 }
