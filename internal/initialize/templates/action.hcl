@@ -1,5 +1,8 @@
+// for more information on the syntax and the list of available components,
+// you can refer to the documentation at https://sensible.dev/docs/action
+
 action "Sample Action" {
-  hosts = ["localhost"]
+  groups = ["Web Server 1"] // Omit this line if you want the action to run locally on your machine
 
   shell "Test shell" {
     command = "echo Hello world!"
@@ -10,10 +13,10 @@ action "Sample Action" {
     packages = ["cowsay", "git"]
   }
 
-  cron "Test crom" {
+  cron "Test cron" {
     expression = "* * * * *" 
     job = "echo This is a cron job >> ~/random-stuffs/sensible/cron-test.log"
-    type = "add"
+    type = "add" 
   }
 
 }
