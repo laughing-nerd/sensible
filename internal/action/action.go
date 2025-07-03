@@ -17,7 +17,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Do(filePath string, variables map[string]cty.Value, env string) error {
+func Do(filePath string, variables map[string]map[string]cty.Value, env string) error {
 	var (
 		wg    = &sync.WaitGroup{}
 		mode  string

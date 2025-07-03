@@ -3,9 +3,9 @@ package constants
 const (
 	// files
 	HostFile         = "hosts.hcl"
-	VariablesFile    = "values.hcl"
+	ValuesFile       = "values.hcl"
 	SampleActionFile = "sample-action.hcl"
-	SecretsFile      = "secrets.hcl"
+	SecretsFile      = "secrets.hcl.enc" // secrets is always encrypted
 
 	// dirs
 	ResourcesDir = "./.sensible/%s/resources"

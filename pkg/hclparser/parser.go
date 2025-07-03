@@ -2,6 +2,7 @@ package hclparser
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -29,7 +30,7 @@ func GetBlockAttributes(block *hclsyntax.Block, m map[string]cty.Value) error {
 	for name, attr := range block.Body.Attributes {
 		val, diag := attr.Expr.Value(nil)
 		if diag.HasErrors() {
-			return errors.New("Failed to evaluate " + name + ": " + diag.Error())
+			return fmt.Errorf("Failed to evaluate attribute %s: %s", name, diag.Error())
 		}
 		m[name] = val
 	}
