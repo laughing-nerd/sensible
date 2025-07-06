@@ -1,4 +1,4 @@
-name: Go Code Quality
+name: Code Quality
 
 on:
   pull_request:
@@ -7,8 +7,8 @@ on:
       - main
 
 jobs:
-  lint-checks:
-    name: Run linters
+  run-linter:
+    name: Run linter
     runs-on: ubuntu-latest
 
     steps:
@@ -20,11 +20,8 @@ jobs:
         with:
           go-version: 1.24.0
 
-      - name: Install golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
-
-      - name: Run golangci-lint
-        run: golangci-lint run ./...
-
+          args: --out-format=github-actions ./...
