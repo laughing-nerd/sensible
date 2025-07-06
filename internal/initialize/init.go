@@ -47,13 +47,13 @@ func Start(env string) error {
 		// create the directory
 		dirPath := fmt.Sprintf(dir, env)
 		if err := os.MkdirAll(dirPath, 0756); err != nil {
-			return fmt.Errorf("Error creating `%s` directory: %s\n", dir, err.Error())
+			return fmt.Errorf("error creating `%s` directory: %s\n", dir, err.Error())
 		}
 
 		// create the files in the directory
 		for _, file := range files {
 			if err := os.WriteFile(filepath.Join(dirPath, file.FileName), []byte(file.Template), 0644); err != nil {
-				return fmt.Errorf("Error creating `%s` file in `%s` directory: %s\n", file.FileName, dir, err.Error())
+				return fmt.Errorf("error creating `%s` file in `%s` directory: %s\n", file.FileName, dir, err.Error())
 			}
 		}
 

@@ -33,8 +33,8 @@ func Get(key string, all bool, env string) error {
 	// if user wants all secrets, print the whole decrypted content
 	// no need to iterate through lines
 	if all {
-		os.Stdout.WriteString(string(decrypted) + "\n")
-		return nil
+		_, err := os.Stdout.WriteString(string(decrypted) + "\n")
+		return err
 	}
 
 	lines := strings.SplitSeq(string(decrypted), "\n")
@@ -45,8 +45,8 @@ func Get(key string, all bool, env string) error {
 		}
 
 		if strings.HasPrefix(l, key+"=") {
-			os.Stdout.WriteString(l + "\n")
-			return nil
+			_, err := os.Stdout.WriteString(l + "\n")
+			return err
 		}
 
 	}

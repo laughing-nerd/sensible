@@ -70,7 +70,12 @@ func (c *InstallerComponent) RunRemote(hosts map[string]models.Host) {
 				logger.Error("failed to create SSH session for host ", host.Name, ": ", err.Error())
 				return
 			}
-			defer session.Close()
+
+			defer func() {
+				if err := session.Close(); err != nil {
+					logger.Error("failed to close SSH session for host ", host.Name, ": ", err.Error())
+				}
+			}()
 
 			command, err := c.getPkgInstallCommand(constants.Remote, session)
 			if err != nil {
