@@ -31,11 +31,11 @@ func GetVariables(actionFile, env string) (map[string]map[string]cty.Value, erro
 	}
 
 	if shouldReadValues {
-		readValuesFile(constants.ResourcesDir, constants.ValuesFile, env, variables["values"])
+		_ = readValuesFile(constants.ResourcesDir, constants.ValuesFile, env, variables["values"])
 	}
 
 	if shouldReadSecrets {
-		readSecretsFile(constants.ResourcesDir, constants.SecretsFile, env, variables["secrets"])
+		_ = readSecretsFile(constants.ResourcesDir, constants.SecretsFile, env, variables["secrets"])
 	}
 
 	return variables, nil
