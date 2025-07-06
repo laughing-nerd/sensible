@@ -25,7 +25,7 @@ func (c *RunCommand) Run() error {
 	}
 
 	// we will need the variables
-	values, err := action.GetValues(c.Env)
+	values, err := action.GetVariables(actionFile, c.Env)
 	if err != nil {
 		return err
 	}

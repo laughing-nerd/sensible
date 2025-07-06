@@ -13,8 +13,8 @@ var (
 	//go:embed templates/hosts.hcl
 	hostFileTemplate string
 
-	//go:embed templates/variables.hcl
-	variablesFileTemplate string
+	//go:embed templates/values.hcl
+	valuesTemplateFile string
 
 	//go:embed templates/action.hcl
 	actionFileTemplate string
@@ -31,7 +31,7 @@ type Starter struct {
 var starter = map[string][]Starter{
 	constants.ResourcesDir: {
 		{FileName: constants.HostFile, Template: hostFileTemplate},
-		{FileName: constants.VariablesFile, Template: variablesFileTemplate},
+		{FileName: constants.ValuesFile, Template: valuesTemplateFile},
 	},
 	constants.ActionsDir: {
 		{FileName: constants.SampleActionFile, Template: actionFileTemplate},

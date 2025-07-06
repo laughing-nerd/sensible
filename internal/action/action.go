@@ -17,7 +17,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Do(filePath string, variables map[string]cty.Value, env string) error {
+func Do(filePath string, variables map[string]map[string]cty.Value, env string) error {
 	var (
 		wg    = &sync.WaitGroup{}
 		mode  string
@@ -112,7 +112,13 @@ func Do(filePath string, variables map[string]cty.Value, env string) error {
 		for _, componentBlock := range actionBody.Blocks {
 			var component = components.ComponentMap[componentBlock.Type]
 
-			evalCtx := &hcl.EvalContext{Variables: variables}
+			evalCtx := &hcl.EvalContext{
+				Variables: map[string]cty.Value{
+					"values":  cty.ObjectVal(variables["values"]),
+					"secrets": cty.ObjectVal(variables["secrets"]),
+				},
+			}
+			// evalCtx := &hcl.EvalContext{Variables: variables["values"]}
 			if diags := gohcl.DecodeBody(componentBlock.Body, evalCtx, component); diags.HasErrors() {
 				return fmt.Errorf("Error decoding component %s: %v", componentBlock.Type, diags)
 			}
