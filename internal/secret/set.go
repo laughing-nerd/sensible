@@ -34,7 +34,9 @@ func Set(key, value, env string) error {
 			return err
 		}
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("failed to close the secrets file: %w", err)
+	}
 
 	// get user password to encrypt the secret
 	password, err := utils.AskPassword("Enter password to set secret: ")

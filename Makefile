@@ -1,12 +1,8 @@
-# Project name (binary output)
 BINARY_NAME := sensible
-
-# Output directory for builds
 BUILD_DIR := ./build
-
-# Platforms and architectures to build for
 PLATFORMS := linux windows darwin
 ARCHS := amd64 arm64
+VERSION ?= dev
 
 .PHONY: all clean
 
@@ -23,7 +19,7 @@ build:
 			outdir=$(BUILD_DIR)/$$os-$$arch; \
 			mkdir -p $$outdir; \
 			echo "Building for $$os/$$arch..."; \
-			GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags="-s -w" -o $$outdir/$(BINARY_NAME)$$( [ $$os = windows ] && echo .exe ); \
+			GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags="-s -w -X 'main.version=$(VERSION)'" -o $$outdir/$(BINARY_NAME)$$( [ $$os = windows ] && echo .exe ); \
 		done \
 	done
 	@echo "Builds completed. Check the $(BUILD_DIR) directory."

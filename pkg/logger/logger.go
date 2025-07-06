@@ -27,7 +27,7 @@ func Error(msg ...string) {
 }
 
 func Plain(msg string) {
-	os.Stdout.WriteString(msg)
+	_, _ = os.Stdout.WriteString(msg) // ignore error, as this is a simple print function
 }
 
 // helper func ...

@@ -18,7 +18,7 @@ var BaseCommand struct {
 
 func ParseCmd(version string) *kong.Context {
 	if len(os.Args) < 2 {
-		os.Stdout.WriteString("sensible " + version + "\nRun sensible --help to see available commands.\n")
+		_, _ = os.Stdout.WriteString("sensible " + version + "\nRun sensible --help to see available commands.\n")
 		return nil
 	}
 

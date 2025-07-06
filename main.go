@@ -5,7 +5,7 @@ import (
 	"sensible/pkg/logger"
 )
 
-const version = "v0.0.1"
+var version = "v0.0.0"
 
 func main() {
 	kctx := kong.ParseCmd(version)

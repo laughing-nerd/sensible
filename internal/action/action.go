@@ -120,7 +120,7 @@ func Do(filePath string, variables map[string]map[string]cty.Value, env string) 
 			}
 			// evalCtx := &hcl.EvalContext{Variables: variables["values"]}
 			if diags := gohcl.DecodeBody(componentBlock.Body, evalCtx, component); diags.HasErrors() {
-				return fmt.Errorf("Error decoding component %s: %v", componentBlock.Type, diags)
+				return fmt.Errorf("error decoding component %s: %v", componentBlock.Type, diags)
 			}
 
 			logger.Custom("EXECUTING", constants.ColorYellow, componentBlock.Labels[0], "🚀")

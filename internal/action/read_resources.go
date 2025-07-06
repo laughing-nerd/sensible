@@ -31,11 +31,15 @@ func GetVariables(actionFile, env string) (map[string]map[string]cty.Value, erro
 	}
 
 	if shouldReadValues {
-		readValuesFile(constants.ResourcesDir, constants.ValuesFile, env, variables["values"])
+		if err := readValuesFile(constants.ResourcesDir, constants.ValuesFile, env, variables["values"]); err != nil {
+			return nil, err
+		}
 	}
 
 	if shouldReadSecrets {
-		readSecretsFile(constants.ResourcesDir, constants.SecretsFile, env, variables["secrets"])
+		if err := readSecretsFile(env, variables["secrets"]); err != nil {
+			return nil, err
+		}
 	}
 
 	return variables, nil
@@ -106,7 +110,9 @@ func readValuesFile(dir, file, env string, variables map[string]cty.Value) error
 		if !utils.FileExists(baseFilePath) {
 			logger.Warn("Unable to read base values file, ignoring defaults")
 		} else {
-			getVariablesFromFile(baseFilePath, "values", variables)
+			if err := getVariablesFromFile(baseFilePath, "values", variables); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -121,17 +127,17 @@ func getVariablesFromFile(file, blockType string, variables map[string]cty.Value
 	}
 
 	if len(blocks) > 1 || blocks == nil {
-		return errors.New("There should be atmost 1 `variables` block")
+		return errors.New("there should be atmost 1 `variables` block")
 	}
 
 	if blocks[0].Type != blockType {
-		return fmt.Errorf("Expected a `%s` block, but found `%s`", blockType, blocks[0].Type)
+		return fmt.Errorf("expected a `%s` block, but found `%s`", blockType, blocks[0].Type)
 	}
 
 	return hclparser.GetBlockAttributes(blocks[0], variables)
 }
 
-func readSecretsFile(dir, file, env string, variables map[string]cty.Value) error {
+func readSecretsFile(env string, variables map[string]cty.Value) error {
 	// read the secrets file
 	secretFile, err := utils.GetFilePath(constants.SecretsDir, constants.SecretsFile, env)
 	if err != nil {
@@ -163,7 +169,7 @@ func readSecretsFile(dir, file, env string, variables map[string]cty.Value) erro
 
 		kvPair := strings.SplitN(l, "=", 2)
 		if len(kvPair) != 2 {
-			return fmt.Errorf("Invalid secret format in line: %s", l)
+			return fmt.Errorf("invalid secret format in line: %s", l)
 		}
 		key := strings.TrimSpace(kvPair[0])
 		value := strings.TrimSpace(kvPair[1])

@@ -30,7 +30,7 @@ func GetBlockAttributes(block *hclsyntax.Block, m map[string]cty.Value) error {
 	for name, attr := range block.Body.Attributes {
 		val, diag := attr.Expr.Value(nil)
 		if diag.HasErrors() {
-			return fmt.Errorf("Failed to evaluate attribute %s: %s", name, diag.Error())
+			return fmt.Errorf("failed to evaluate attribute %s: %s", name, diag.Error())
 		}
 		m[name] = val
 	}

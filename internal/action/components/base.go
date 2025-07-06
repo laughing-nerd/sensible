@@ -51,7 +51,13 @@ func (b *Base) RunSshCommand(hosts map[string]models.Host, command string) {
 				logger.Error("failed to create SSH session for host ", host.Name, ": ", err.Error())
 				return
 			}
-			defer session.Close()
+
+			// defer closing the session
+			defer func() {
+				if err := session.Close(); err != nil {
+					logger.Error("failed to close SSH session for host ", host.Name, ": ", err.Error())
+				}
+			}()
 
 			if err := session.Run(command); err != nil {
 				logger.Error("failed to run command on host ", host.Name, ": ", err.Error())
