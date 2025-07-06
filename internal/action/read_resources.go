@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sensible/internal/constants"
+	"sensible/internal/utils"
 	"sensible/models"
 	"sensible/pkg/hclparser"
 	"sensible/pkg/logger"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/zclconf/go-cty/cty"
-	"golang.org/x/sync/errgroup"
 )
 
 // TODO: Add env variable support
@@ -30,23 +30,12 @@ func GetVariables(actionFile, env string) (map[string]map[string]cty.Value, erro
 		"secrets": {},
 	}
 
-	// errCh := make(chan error, 2)
-	var g errgroup.Group
-
 	if shouldReadValues {
-		g.Go(func() error {
-			return readVariableSet(constants.ResourcesDir, constants.ValuesFile, constants.Values, env, variables)
-		})
+		readValuesFile(constants.ResourcesDir, constants.ValuesFile, env, variables["values"])
 	}
 
 	if shouldReadSecrets {
-		g.Go(func() error {
-			return readVariableSet(constants.SecretsDir, constants.SecretsFile, constants.Secrets, env, variables)
-		})
-	}
-	// Wait for err results
-	if err := g.Wait(); err != nil {
-		return nil, err
+		readSecretsFile(constants.ResourcesDir, constants.SecretsFile, env, variables["secrets"])
 	}
 
 	return variables, nil
@@ -55,7 +44,7 @@ func GetVariables(actionFile, env string) (map[string]map[string]cty.Value, erro
 func GetHosts(variables map[string]map[string]cty.Value, env string) (map[string]map[string]models.Host, error) {
 	var groups = make(map[string]map[string]models.Host)
 
-	hostsFilePath, err := getFile(constants.ResourcesDir, constants.HostFile, env)
+	hostsFilePath, err := utils.GetFilePath(constants.ResourcesDir, constants.HostFile, env)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +80,38 @@ func GetHosts(variables map[string]map[string]cty.Value, env string) (map[string
 }
 
 // helper func ...
-func fileExists(file string) bool {
-	_, err := os.Stat(file)
-	return err == nil || !os.IsNotExist(err)
+func shouldRead(file string) (bool, bool) {
+	contents, err := os.ReadFile(file)
+	if err != nil {
+		return false, false
+	}
+
+	return bytes.Contains(contents, []byte("${values.")), bytes.Contains(contents, []byte("${secrets."))
+}
+
+// Reads base and env-specific files into variables map for the given key ("values" or "secrets")
+func readValuesFile(dir, file, env string, variables map[string]cty.Value) error {
+	mainFilePath, err := utils.GetFilePath(dir, file, env)
+	if err != nil {
+		return err
+	}
+
+	baseFilePath, err := utils.GetFilePath(dir, file, "base")
+	if err != nil {
+		return err
+	}
+
+	// Read base file first if env != base
+	if env != "base" {
+		if !utils.FileExists(baseFilePath) {
+			logger.Warn("Unable to read base values file, ignoring defaults")
+		} else {
+			getVariablesFromFile(baseFilePath, "values", variables)
+		}
+	}
+
+	// intentional override of base file with env-specific file
+	return getVariablesFromFile(mainFilePath, "values", variables)
 }
 
 func getVariablesFromFile(file, blockType string, variables map[string]cty.Value) error {
@@ -113,42 +131,46 @@ func getVariablesFromFile(file, blockType string, variables map[string]cty.Value
 	return hclparser.GetBlockAttributes(blocks[0], variables)
 }
 
-func getFile(dir, file, env string) (string, error) {
-	dir = fmt.Sprintf(dir, env)
-	joinedFile := filepath.Join(dir, file)
-	return filepath.Abs(joinedFile)
-}
-
-func shouldRead(file string) (bool, bool) {
-	contents, err := os.ReadFile(file)
-	if err != nil {
-		return false, false
-	}
-
-	return bytes.Contains(contents, []byte("${value.")), bytes.Contains(contents, []byte("${secret."))
-}
-
-// Reads base and env-specific files into variables map for the given key ("values" or "secrets")
-func readVariableSet(dir, file, key, env string, variables map[string]map[string]cty.Value) error {
-	mainFilePath, err := getFile(dir, file, env)
+func readSecretsFile(dir, file, env string, variables map[string]cty.Value) error {
+	// read the secrets file
+	secretFile, err := utils.GetFilePath(constants.SecretsDir, constants.SecretsFile, env)
 	if err != nil {
 		return err
 	}
 
-	baseFilePath, err := getFile(dir, file, "base")
+	data, err := os.ReadFile(secretFile)
 	if err != nil {
 		return err
 	}
 
-	// Read base file first if env != base
-	if env != "base" {
-		if !fileExists(baseFilePath) {
-			logger.Warn(fmt.Sprintf("Unable to read base %s file, ignoring defaults", key))
-		} else {
-			_ = getVariablesFromFile(baseFilePath, key, variables[key])
+	// get user password to decrypt the secret
+	password, err := utils.AskPassword("Enter password to read secrets: ")
+	if err != nil {
+		return err
+	}
+
+	decrypted, err := utils.Decrypt(data, password)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.SplitSeq(string(decrypted), "\n")
+	for line := range lines {
+		l := strings.TrimSpace(line)
+		if l == "" || strings.HasPrefix(l, "#") {
+			continue // skip empty lines and comments
 		}
+
+		kvPair := strings.SplitN(l, "=", 2)
+		if len(kvPair) != 2 {
+			return fmt.Errorf("Invalid secret format in line: %s", l)
+		}
+		key := strings.TrimSpace(kvPair[0])
+		value := strings.TrimSpace(kvPair[1])
+
+		variables[key] = cty.StringVal(value)
 	}
 
-	// intentional override of base file with env-specific file
-	return getVariablesFromFile(mainFilePath, key, variables[key])
+	return nil
+
 }

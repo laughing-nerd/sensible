@@ -5,7 +5,7 @@ const (
 	HostFile         = "hosts.hcl"
 	ValuesFile       = "values.hcl"
 	SampleActionFile = "sample-action.hcl"
-	SecretsFile      = "secrets.hcl.enc" // secrets is always encrypted
+	SecretsFile      = ".secrets.enc" // secrets is always encrypted
 
 	// dirs
 	ResourcesDir = "./.sensible/%s/resources"

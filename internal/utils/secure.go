@@ -18,11 +18,6 @@ const (
 	keySize   = 32 // 256 bits for AES-256
 )
 
-// deriveKey generates a 256-bit key using Argon2id
-func deriveKey(password string, salt []byte) []byte {
-	return argon2.IDKey([]byte(password), salt, 3, 64*1024, 4, keySize)
-}
-
 // Encrypt encrypts plaintext using a password and returns final blob [salt | nonce | ciphertext]
 func Encrypt(plaintext []byte, password string) ([]byte, error) {
 	salt := make([]byte, saltSize)
@@ -85,4 +80,10 @@ func AskPassword(prompt string) (string, error) {
 	pwBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
 	return string(pwBytes), err
+}
+
+// helper func..
+// deriveKey generates a 256-bit key using Argon2id
+func deriveKey(password string, salt []byte) []byte {
+	return argon2.IDKey([]byte(password), salt, 3, 64*1024, 4, keySize)
 }

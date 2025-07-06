@@ -11,8 +11,9 @@ type CommonFlags struct {
 }
 
 var BaseCommand struct {
-	Init InitCommand `cmd:"" help:"Initialize sensible by creating a .sensible directory with required files"`
-	Run  RunCommand  `cmd:"" help:"Run an action present in .sensible/<env>/actions/ directory"`
+	Init   InitCommand   `cmd:"" help:"Initialize sensible by creating a .sensible directory with required files"`
+	Run    RunCommand    `cmd:"" help:"Run an action present in .sensible/<env>/actions/ directory"`
+	Secret SecretCommand `cmd:"" help:"Manage secrets in the .sensible/<env>/secrets/ directory"`
 }
 
 func ParseCmd(version string) *kong.Context {
