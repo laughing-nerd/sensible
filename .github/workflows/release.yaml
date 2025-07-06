@@ -12,13 +12,13 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate Release
-        run: .github/scripts/validate-release.sh
-
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Validate Release
+        run: .github/scripts/validate-release.sh
 
       - name: Set up Go
         uses: actions/setup-go@v5
