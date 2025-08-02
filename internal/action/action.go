@@ -116,6 +116,7 @@ func Do(filePath string, variables map[string]map[string]cty.Value, env string) 
 				Variables: map[string]cty.Value{
 					"values":  cty.ObjectVal(variables["values"]),
 					"secrets": cty.ObjectVal(variables["secrets"]),
+					"facts":   cty.ObjectVal(variables["facts"]),
 				},
 			}
 			// evalCtx := &hcl.EvalContext{Variables: variables["values"]}

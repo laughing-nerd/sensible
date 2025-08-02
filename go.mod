@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v1.11.0
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/robfig/cron/v3 v3.0.0
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v4 v4.25.4
 	github.com/zclconf/go-cty v1.16.3
 	golang.org/x/crypto v0.37.0
